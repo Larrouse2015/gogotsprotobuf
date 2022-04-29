@@ -3051,6 +3051,15 @@ func (g *Generator) generateMessage(message *Descriptor) {
 	}
 
 	fullName := strings.Join(message.TypeName(), ".")
+
+	if gogoproto.HasMessageName(g.file.FileDescriptorProto, message.DescriptorProto) {
+		g.P("func (*", goTypeName, ") MessageName() string {")
+		g.In()
+		g.P("return ", strconv.Quote(fullName))
+		g.Out()
+		g.P("}")
+	}
+
 	if g.file.Package != nil {
 		fullName = *g.file.Package + "." + fullName
 	}
@@ -3058,13 +3067,6 @@ func (g *Generator) generateMessage(message *Descriptor) {
 	g.addInitf("%s.RegisterType((*%s)(nil), %q)", g.Pkg["proto"], goTypeName, fullName)
 	if gogoproto.ImportsGoGoProto(g.file.FileDescriptorProto) && gogoproto.RegistersGolangProto(g.file.FileDescriptorProto) {
 		g.addInitf("%s.RegisterType((*%s)(nil), %q)", g.Pkg["golang_proto"], goTypeName, fullName)
-	}
-	if gogoproto.HasMessageName(g.file.FileDescriptorProto, message.DescriptorProto) {
-		g.P("func (*", goTypeName, ") XXX_MessageName() string {")
-		g.In()
-		g.P("return ", strconv.Quote(fullName))
-		g.Out()
-		g.P("}")
 	}
 	// Register types for native map types.
 	for _, k := range mapFieldKeys(mapFieldTypes) {
